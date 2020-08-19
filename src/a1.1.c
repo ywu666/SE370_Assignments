@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
 
 
     //Create a second thread to quick sort the left_block on it
-    if (pthread_create(&thread2, quick_sort, &left_side) != 0) {
+    if (pthread_create(&thread2, NULL, quick_sort, &left_side) != 0) {
         fprintf(stderr, "ERROR: Failed to create second thread\n");
          exit(EXIT_FAILURE);
      }
@@ -130,14 +130,14 @@ int main(int argc, char *argv[]) {
     //Still use the main thread to quick sort the right_side on it
     quick_sort(&right_side);
 
-    times(&finish_times);
-    printf("finish time in clock ticks: %ld\n", finish_times.tms_utime);
-
     //Wait for the second thread to finish
-  if (pthread_join(thread2, NULL) != 0) {
+    if (pthread_join(thread2, NULL) != 0) {
         fprintf(stderr, "ERROR: Failed to join thread\n");
         exit(EXIT_FAILURE);
     }
+
+    times(&finish_times);
+    printf("finish time in clock ticks: %ld\n", finish_times.tms_utime);
 
     // Print the result after finished the sorting
     if (start_block.size < 1001)
