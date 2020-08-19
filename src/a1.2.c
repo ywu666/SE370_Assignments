@@ -68,31 +68,33 @@ void *quick_sort(void *my_data) {
         //Use a new threae to sort the left-side
         pthread_t thread_left;
 
-    //If failed, then using the main thread like step 1
+        //If failed, then using the main thread like step 1
         if (pthread_create(&thread_left, NULL, quick_sort, &left_side) != 0) {
-                fprintf(stderr, "ERROR: Failed to create left thread\n");
-                exit(EXIT_FAILURE);
+                quick_sort(left_side);
         }else {
-            numOfThreads++;
+            //pthread_mutex_lock(&mutex);
+            numActiveThreads++;
+            //pthread_mutex_unlock(&mutex);
         }
+
+        quick_sort(&right_side);
 
 
         //Use a new thread to sort the right side
-        pthread_t thread_right;
+        // pthread_t thread_right;
 
-        //If failed, then using the main thread like step 1
-        if (pthread_create(&thread_right, NULL, quick_sort, &right_side) != 0) {
-                fprintf(stderr, "ERROR: Failed to create left thread\n");
-                exit(EXIT_FAILURE);
-        }else {
-            numOfThreads++;
-        }
+        // //If failed, then using the main thread like step 1
+        // if (pthread_create(&thread_right, NULL, quick_sort, &right_side) != 0) {
+        //        quick_sort(right_side);
+        // }else {
+        //     numOfThreads++;
+        // }
 
-        // Wait for the left thread to finish
+        //Wait for the left thread to finish
         pthread_join(thread_left, NULL);
 
-        // Wait for the right thread to finish
-        pthread_join(thread_right, NULL);
+        //Wait for the right thread to finish
+        //pthread_join(thread_right, NULL);
       
     }
 }
@@ -150,7 +152,7 @@ int main(int argc, char *argv[]) {
         print_data(start_block);
 
     printf(is_sorted(start_block) ? "sorted\n" : "not sorted\n");
-    printf("Number of threads created: %d\n", numOfThreads);
+    printf("Number of threads created: %ld\n", numOfThreads);
     free(start_block.data);
     exit(EXIT_SUCCESS);
 }
