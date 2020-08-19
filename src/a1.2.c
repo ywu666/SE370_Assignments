@@ -25,6 +25,8 @@ struct block {
     int *data;
 };
 
+int numOfThreads;
+
 void print_data(struct block my_data) {
     for (int i = 0; i < my_data.size; ++i)
         printf("%d ", my_data.data[i]);
@@ -70,6 +72,8 @@ void *quick_sort(void *my_data) {
         if (pthread_create(&thread_left, NULL, quick_sort, &left_side) != 0) {
                 fprintf(stderr, "ERROR: Failed to create left thread\n");
                 exit(EXIT_FAILURE);
+        }else {
+            numOfThreads++;
         }
 
 
@@ -80,6 +84,8 @@ void *quick_sort(void *my_data) {
         if (pthread_create(&thread_right, NULL, quick_sort, &right_side) != 0) {
                 fprintf(stderr, "ERROR: Failed to create left thread\n");
                 exit(EXIT_FAILURE);
+        }else {
+            numOfThreads++;
         }
 
         // Wait for the left thread to finish
@@ -144,6 +150,7 @@ int main(int argc, char *argv[]) {
         print_data(start_block);
 
     printf(is_sorted(start_block) ? "sorted\n" : "not sorted\n");
+    printf("Number of threads created: %d\n", numOfThreads);
     free(start_block.data);
     exit(EXIT_SUCCESS);
 }
