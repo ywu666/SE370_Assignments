@@ -32,60 +32,63 @@ void print_data(struct block my_data) {
 }
 
 /* Split the shared array around the pivot, return pivot index. */
-int split_on_pivot(struct block my_data) {
-    int right = my_data.size - 1;
+int split_on_pivot(struct block *my_data) {
+    int right = my_data->size - 1;
     int left = 0;
-    int pivot = my_data.data[right];
+    int pivot = my_data->data[right];
     while (left < right) {
-        int value = my_data.data[right - 1];
+        int value = my_data->data[right - 1];
         if (value > pivot) {
-            my_data.data[right--] = value;
+            my_data->data[right--] = value;
         } else {
-            my_data.data[right - 1] = my_data.data[left];
-            my_data.data[left++] = value;
+            my_data->data[right - 1] = my_data->data[left];
+            my_data->data[left++] = value;
         }
     }
-    my_data.data[right] = pivot;
+    my_data->data[right] = pivot;
     return right;
 }
 
 /* Quick sort the data. */
-void quick_sort(struct block my_data) {
-    if (my_data.size < 2)
-        return;
-    int pivot_pos = split_on_pivot(my_data);
+void *quick_sort(void *my_data) {
+    struct block *cast = (struct block *)my_data;
 
-    struct block left_side, right_side;
+    if (cast->size >= 2) {
+        int pivot_pos = split_on_pivot(cast);
 
-    left_side.size = pivot_pos;
-    left_side.data = my_data.data;
-    right_side.size = my_data.size - pivot_pos - 1;
-    right_side.data = my_data.data + pivot_pos + 1;
+        struct block left_side, right_side;
 
-    //Use a new threae to sort the left-side
-    pthread_t thread_left;
+        left_side.size = pivot_pos;
+        left_side.data = cast->data;
+        right_side.size = cast->size - pivot_pos - 1;
+        right_side.data = cast->data + pivot_pos + 1;
 
-    //If failed, then using the main thread like step 1
-    if (pthread_create(&thread_left, NULL, quick_sort, &left_side) != 0) {
-      fprintf(stderr, "ERROR: Failed to create left thread\n");
-      exit(EXIT_FAILURE);
-    }
-
-
-    //Use a new thread to sort the right side
-    pthread_t thread_right;
+        //Use a new threae to sort the left-side
+        pthread_t thread_left;
 
     //If failed, then using the main thread like step 1
-    if (pthread_create(&thread_right, NULL, quick_sort, &right_side) != 0) {
-      fprintf(stderr, "ERROR: Failed to create left thread\n");
-      exit(EXIT_FAILURE);
+        if (pthread_create(&thread_left, NULL, quick_sort, &left_side) != 0) {
+                fprintf(stderr, "ERROR: Failed to create left thread\n");
+                exit(EXIT_FAILURE);
+        }
+
+
+        //Use a new thread to sort the right side
+        pthread_t thread_right;
+
+        //If failed, then using the main thread like step 1
+        if (pthread_create(&thread_right, NULL, quick_sort, &right_side) != 0) {
+                fprintf(stderr, "ERROR: Failed to create left thread\n");
+                exit(EXIT_FAILURE);
+        }
+
+        // Wait for the left thread to finish
+        pthread_join(thread_left, NULL);
+
+        // Wait for the right thread to finish
+        pthread_join(thread_right, NULL);
+      
     }
-
-    // Wait for the left thread to finish
-    pthread_join(thread_left, NULL);
-
-    // Wait for the right thread to finish
-    pthread_join(thread_right, NULL);
 }
 
 /* Check to see if the data is sorted. */
@@ -132,7 +135,7 @@ int main(int argc, char *argv[]) {
     printf("start time in clock ticks: %ld\n", start_times.tms_utime);
 
     //if the new thead is failed then using the main thread to sort like the step 1
-    quick_sort(start_block);
+    quick_sort(&start_block);
 
     times(&finish_times);
     printf("finish time in clock ticks: %ld\n", finish_times.tms_utime);
