@@ -66,28 +66,31 @@ void *quick_sort_thread(void *my_data) {
         right_side.size = cast->size - pivot_pos - 1;
         right_side.data = cast->data + pivot_pos + 1;
 
-        //Use a new threae to sort the left-side
-        pthread_t thread_left;
+      //   //Use a new threae to sort the left-side
+      //   pthread_t thread_left;
 
-        //If failed, then using the main thread like step 1
-        if (pthread_create(&thread_left, NULL, quick_sort_thread, &left_side) != 0) {
-                quick_sort(&left_side);
-        }
+      //   //If failed, then using the main thread like step 1
+      //   if (pthread_create(&thread_left, NULL, quick_sort_thread, &left_side) != 0) {
+      //           quick_sort(&left_side);
+      //   }
 
 
-      //  Use a new thread to sort the right side
-        pthread_t thread_right;
+      // //  Use a new thread to sort the right side
+      //   pthread_t thread_right;
 
-        //If failed, then using the main thread like step 1
-        if (pthread_create(&thread_right, NULL, quick_sort_thread, &right_side) != 0) {
-               quick_sort(&right_side);
-        }
+      //   //If failed, then using the main thread like step 1
+      //   if (pthread_create(&thread_right, NULL, quick_sort_thread, &right_side) != 0) {
+      //          quick_sort(&right_side);
+      //   }
 
-        //Wait for the left thread to finish
-        pthread_join(thread_left, NULL);
+      //   //Wait for the left thread to finish
+      //   pthread_join(thread_left, NULL);
 
-        //Wait for the right thread to finish
-        pthread_join(thread_right, NULL);
+      //   //Wait for the right thread to finish
+      //   pthread_join(thread_right, NULL);
+        quick_sort_thread(&left_side);
+        quick_sort_thread(&right_side);
+        
       
     }
 }
@@ -97,7 +100,7 @@ void *quick_sort_thread(void *my_data) {
 void quick_sort(struct block my_data) {
     if (my_data.size < 2)
         return;
-    int pivot_pos = split_on_pivot(my_data);
+    int pivot_pos = split_on_pivot(&my_data);
 
     struct block left_side, right_side;
 
@@ -106,8 +109,34 @@ void quick_sort(struct block my_data) {
     right_side.size = my_data.size - pivot_pos - 1;
     right_side.data = my_data.data + pivot_pos + 1;
 
-    quick_sort(left_side);
-    quick_sort(right_side);
+    // quick_sort(left_side);
+    // quick_sort(right_side);
+
+    //Use a new threae to sort the left-side
+    pthread_t thread_left;
+
+    //If failed, then using the main thread like step 1
+    if (pthread_create(&thread_left, NULL, quick_sort_thread, &left_side) != 0) {
+                quick_sort(left_side);
+    }else {
+        numOfThreads++;
+    }
+
+    //  Use a new thread to sort the right side
+    pthread_t thread_right;
+
+    //If failed, then using the main thread like step 1
+    if (pthread_create(&thread_right, NULL, quick_sort_thread, &right_side) != 0) {
+               quick_sort(right_side);
+    }else {
+        numOfThreads++;
+    }
+
+    //Wait for the left thread to finish
+    pthread_join(thread_left, NULL);
+
+    //Wait for the right thread to finish
+    pthread_join(thread_right, NULL);
 }
 
 
