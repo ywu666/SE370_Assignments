@@ -65,33 +65,9 @@ void *quick_sort_thread(void *my_data) {
         left_side.data = cast->data;
         right_side.size = cast->size - pivot_pos - 1;
         right_side.data = cast->data + pivot_pos + 1;
-
-      //   //Use a new threae to sort the left-side
-      //   pthread_t thread_left;
-
-      //   //If failed, then using the main thread like step 1
-      //   if (pthread_create(&thread_left, NULL, quick_sort_thread, &left_side) != 0) {
-      //           quick_sort(&left_side);
-      //   }
-
-
-      // //  Use a new thread to sort the right side
-      //   pthread_t thread_right;
-
-      //   //If failed, then using the main thread like step 1
-      //   if (pthread_create(&thread_right, NULL, quick_sort_thread, &right_side) != 0) {
-      //          quick_sort(&right_side);
-      //   }
-
-      //   //Wait for the left thread to finish
-      //   pthread_join(thread_left, NULL);
-
-      //   //Wait for the right thread to finish
-      //   pthread_join(thread_right, NULL);
+        
         quick_sort_thread(&left_side);
         quick_sort_thread(&right_side);
-        
-      
     }
 }
 
@@ -119,24 +95,16 @@ void quick_sort(struct block my_data) {
     if (pthread_create(&thread_left, NULL, quick_sort_thread, &left_side) != 0) {
                 quick_sort(left_side);
     }else {
+    	pthread_mutex_lock(&mtx);
         numOfThreads++;
+        pthread_mutex_unlock(&mtx);
     }
-
-    //  Use a new thread to sort the right side
-    pthread_t thread_right;
-
-    //If failed, then using the main thread like step 1
-    if (pthread_create(&thread_right, NULL, quick_sort_thread, &right_side) != 0) {
-               quick_sort(right_side);
-    }else {
-        numOfThreads++;
-    }
-
+    
+    quick_sort(right_side);
+    
     //Wait for the left thread to finish
     pthread_join(thread_left, NULL);
 
-    //Wait for the right thread to finish
-    pthread_join(thread_right, NULL);
 }
 
 
@@ -185,7 +153,7 @@ int main(int argc, char *argv[]) {
     printf("start time in clock ticks: %ld\n", start_times.tms_utime);
 
     //if the new thead is failed then using the main thread to sort like the step 1
-    quick_sort(&start_block);
+    quick_sort(start_block);
 
     times(&finish_times);
     printf("finish time in clock ticks: %ld\n", finish_times.tms_utime);
