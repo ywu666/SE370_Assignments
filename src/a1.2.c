@@ -25,7 +25,8 @@ struct block {
     int *data;
 };
 
-int numOfThreads;
+unsigned long long int numOfThreads;
+static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
 
 void print_data(struct block my_data) {
     for (int i = 0; i < my_data.size; ++i)
@@ -52,7 +53,7 @@ int split_on_pivot(struct block *my_data) {
 }
 
 /* Quick sort the data. */
-void *quick_sort(void *my_data) {
+void *quick_sort_thread(void *my_data) {
     struct block *cast = (struct block *)my_data;
 
     if (cast->size >= 2) {
@@ -69,35 +70,47 @@ void *quick_sort(void *my_data) {
         pthread_t thread_left;
 
         //If failed, then using the main thread like step 1
-        if (pthread_create(&thread_left, NULL, quick_sort, &left_side) != 0) {
-                quick_sort(left_side);
-        }else {
-            //pthread_mutex_lock(&mutex);
-            numActiveThreads++;
-            //pthread_mutex_unlock(&mutex);
+        if (pthread_create(&thread_left, NULL, quick_sort_thread, &left_side) != 0) {
+                quick_sort(&left_side);
         }
 
-        quick_sort(&right_side);
 
+      //  Use a new thread to sort the right side
+        pthread_t thread_right;
 
-        //Use a new thread to sort the right side
-        // pthread_t thread_right;
-
-        // //If failed, then using the main thread like step 1
-        // if (pthread_create(&thread_right, NULL, quick_sort, &right_side) != 0) {
-        //        quick_sort(right_side);
-        // }else {
-        //     numOfThreads++;
-        // }
+        //If failed, then using the main thread like step 1
+        if (pthread_create(&thread_right, NULL, quick_sort_thread, &right_side) != 0) {
+               quick_sort(&right_side);
+        }
 
         //Wait for the left thread to finish
         pthread_join(thread_left, NULL);
 
         //Wait for the right thread to finish
-        //pthread_join(thread_right, NULL);
+        pthread_join(thread_right, NULL);
       
     }
 }
+
+
+/* Quick sort the data. */
+void quick_sort(struct block my_data) {
+    if (my_data.size < 2)
+        return;
+    int pivot_pos = split_on_pivot(my_data);
+
+    struct block left_side, right_side;
+
+    left_side.size = pivot_pos;
+    left_side.data = my_data.data;
+    right_side.size = my_data.size - pivot_pos - 1;
+    right_side.data = my_data.data + pivot_pos + 1;
+
+    quick_sort(left_side);
+    quick_sort(right_side);
+}
+
+
 
 /* Check to see if the data is sorted. */
 bool is_sorted(struct block my_data) {
@@ -152,7 +165,7 @@ int main(int argc, char *argv[]) {
         print_data(start_block);
 
     printf(is_sorted(start_block) ? "sorted\n" : "not sorted\n");
-    printf("Number of threads created: %ld\n", numOfThreads);
+    printf("Number of threads created: %llu\n", numOfThreads);
     free(start_block.data);
     exit(EXIT_SUCCESS);
 }
