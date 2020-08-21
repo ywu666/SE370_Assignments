@@ -59,7 +59,7 @@ void *quick_sort_thread(void *my_data) {
     struct block *cast = (struct block*) my_data;
     
     pthread_mutex_lock(&mutex);
-    while(is_sorted(*cast)) {
+    while(!is_sorted(*cast)) {
     	pthread_cond_wait(&cond, &mutex);
     }
 
