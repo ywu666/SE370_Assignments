@@ -8,14 +8,15 @@
     By submitting a program you are claiming that you and only you have made
     adjustments and additions to this code.
  */
-#include <pthread.h>
 #include <stdio.h> 
 #include <stdlib.h> 
+#include <sys/mman.h>
 #include <unistd.h>
 #include <string.h>
 #include <sys/resource.h>
 #include <stdbool.h>
 #include <sys/times.h>
+#include <sys/wait.h>
 
 #define SIZE    10
 
@@ -65,14 +66,7 @@ void quick_sort(struct block my_data) {
     right_side.data = my_data.data + pivot_pos + 1;
    
     if (right_side.size > min_size || left_side.size > min_size) {
-        
-        int my_pipe[2];
-        // Initialize the pipe
-        if (pipe(my_pipe) == -1) {
-            perror("Failed to create the pipe\n");
-            exit(EXIT_FAILURE);
-        }
-
+      
         int c_pid = fork();
         if(c_pid  == -1) {
             perror("Failed to create the child\n");
@@ -80,15 +74,11 @@ void quick_sort(struct block my_data) {
         }
 
         if (c_pid != 0) { // the parent
-           
-            //pass the data from the child process
-            if(read(my_pipe[0], right_side.data, right_side.size * sizeof(int))){};
 
             quick_sort(left_side);
-         
+            wait(NULL);
         } else { // the child
             quick_sort(right_side);
-            if(write(my_pipe[1], right_side.data, right_side.size * sizeof(int))){}  
             exit(EXIT_SUCCESS);  
         } 
     } else {
@@ -125,8 +115,12 @@ int main(int argc, char *argv[]) {
         size = atol(argv[1]);
     }
     struct block start_block;
+    
+
+  // Set data with mmap, so that all processes can share it
     start_block.size = size;
-    start_block.data = mmap(NULL, start_block.size, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+    start_block.data = (int *) mmap(NULL, size * sizeof(int), PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANON | MAP_SHARED, 0, 0);
+    
     if (start_block.data == NULL) {
         printf("Problem allocating memory.\n");
         exit(EXIT_FAILURE);
@@ -134,24 +128,21 @@ int main(int argc, char *argv[]) {
 
     produce_random_data(start_block);
     
+    
     if(start_block.size < 100000) {
         min_size = start_block.size;
      }else {
      	min_size = start_block.size / 100;
      }
-     printf("%d\n",min_size);
-    
-
+   
     struct tms start_times, finish_times;
     times(&start_times);
     printf("start time in clock ticks: %ld\n", start_times.tms_utime);
     quick_sort(start_block);
     times(&finish_times);
     printf("finish time in clock ticks: %ld\n", finish_times.tms_utime);
-
     printf(is_sorted(start_block) ? "sorted\n" : "not sorted\n");
 
     //free(start_block.data);
-    wait(NULL);
     exit(EXIT_SUCCESS);
 }
