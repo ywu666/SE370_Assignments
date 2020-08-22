@@ -127,19 +127,10 @@ int main(int argc, char *argv[]) {
     }
 
     if (c_pid != 0) { // the parent
-         // Close pipe writer
-        close(my_pipe[1]);
-
-
+    	
+	quick_sort(left_side);
         //pass the data from the child process
         if(read(my_pipe[0], right_side.data, right_side.size * sizeof(int))){};
-
-
-        quick_sort(left_side);
-        printf(is_sorted(right_side) ? "right side is sorted\n" : "right side is not sorted\n");
-
-        // Close the pipe reader so only reading allowed
-        close(my_pipe[0]);
 
         times(&finish_times);
         printf("finish time in clock ticks: %ld\n", finish_times.tms_utime);
@@ -149,16 +140,10 @@ int main(int argc, char *argv[]) {
         exit(EXIT_SUCCESS);
     } else { // the child
 
-        //close the read one 
-        close(my_pipe[0]);
-
         quick_sort(right_side);
-        //printf(is_sorted(right_side) ? "Right side is sorted\n" : "right side is not sorted\n");
+
         if(write(my_pipe[1], right_side.data, right_side.size * sizeof(int))){}
         
         exit(EXIT_SUCCESS);
-        close(my_pipe[1]);
     }
-    // if (start_block.size < 1001)
-    //     print_data(start_block);
 }
