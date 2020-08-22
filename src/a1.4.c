@@ -1,10 +1,8 @@
 /*
     The sorting program to use for Operating Systems Assignment 1 2020
     written by Robert Sheehan
-
     Modified by: put your name here
     UPI: put your login here
-
     By submitting a program you are claiming that you and only you have made
     adjustments and additions to this code.
  */
@@ -84,13 +82,13 @@ void produce_random_data(struct block my_data) {
 }
 
 int main(int argc, char *argv[]) {
-	long size;
+    long size;
 
-	if (argc < 2) {
-		size = SIZE;
-	} else {
-		size = atol(argv[1]);
-	}
+    if (argc < 2) {
+        size = SIZE;
+    } else {
+        size = atol(argv[1]);
+    }
     struct block start_block;
     start_block.size = size;
     start_block.data = (int *)calloc(size, sizeof(int));
@@ -127,8 +125,8 @@ int main(int argc, char *argv[]) {
     }
 
     if (c_pid != 0) { // the parent
-    	
-	quick_sort(left_side);
+        
+    quick_sort(left_side);
         //pass the data from the child process
         if(read(my_pipe[0], right_side.data, right_side.size * sizeof(int))){};
 
@@ -144,6 +142,6 @@ int main(int argc, char *argv[]) {
 
         if(write(my_pipe[1], right_side.data, right_side.size * sizeof(int))){}
         
-        exit(EXIT_SUCCESS);
+        //exit(EXIT_SUCCESS);
     }
 }
