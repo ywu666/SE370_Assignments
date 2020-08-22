@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
     if(start_block.size < 100000) {
         min_size = start_block.size;
      }else {
-     	min_size = start_block.size / 100;
+     	min_size = start_block.size / 1000;
      }
    
     struct tms start_times, finish_times;
