@@ -63,10 +63,9 @@ void quick_sort(struct block my_data) {
     left_side.data = my_data.data;
     right_side.size = my_data.size - pivot_pos - 1;
     right_side.data = my_data.data + pivot_pos + 1;
-    min_size = my_data.size / 2;
-    //printf("%d",min_size);
+   
     if (right_side.size > min_size || left_side.size > min_size) {
-        //printf("Starting of Processor---\n");
+        
         int my_pipe[2];
         // Initialize the pipe
         if (pipe(my_pipe) == -1) {
@@ -134,6 +133,14 @@ int main(int argc, char *argv[]) {
     }
 
     produce_random_data(start_block);
+    
+    if(start_block.size < 100000) {
+        min_size = start_block.size;
+     }else {
+     	min_size = start_block.size / 100;
+     }
+     printf("%d\n",min_size);
+    
 
     struct tms start_times, finish_times;
     times(&start_times);
