@@ -50,7 +50,6 @@ int split_on_pivot(struct block my_data) {
     return right;
 }
 
-
 /* Quick sort the data. */
 void quick_sort(struct block my_data) {
 
@@ -65,9 +64,9 @@ void quick_sort(struct block my_data) {
     right_side.size = my_data.size - pivot_pos - 1;
     right_side.data = my_data.data + pivot_pos + 1;
     min_size = my_data.size / 2;
-    printf("%d",min_size);
+    //printf("%d",min_size);
     if (right_side.size > min_size || left_side.size > min_size) {
-        printf("Starting of Processor---\n");
+        //printf("Starting of Processor---\n");
         int my_pipe[2];
         // Initialize the pipe
         if (pipe(my_pipe) == -1) {
@@ -83,21 +82,15 @@ void quick_sort(struct block my_data) {
 
         if (c_pid != 0) { // the parent
            
-        //pass the data from the child process
-        if(read(my_pipe[0], right_side.data, right_side.size * sizeof(int))){};
+            //pass the data from the child process
+            if(read(my_pipe[0], right_side.data, right_side.size * sizeof(int))){};
 
-        quick_sort(left_side);
-
-        // times(&finish_times);
-        // printf("finish time in clock ticks: %ld\n", finish_times.tms_utime);
-
-        // printf(is_sorted(start_block) ? "sorted\n" : "not sorted\n");
-        // free(start_block.data);
-        //exit(EXIT_SUCCESS);
-        printf("---Ending of Processor\n");
+            quick_sort(left_side);
+         
         } else { // the child
             quick_sort(right_side);
-            if(write(my_pipe[1], right_side.data, right_side.size * sizeof(int))){}    
+            if(write(my_pipe[1], right_side.data, right_side.size * sizeof(int))){}  
+            exit(EXIT_SUCCESS);  
         } 
     } else {
       quick_sort(left_side);
@@ -124,15 +117,14 @@ void produce_random_data(struct block my_data) {
     }
 }
 
-
 int main(int argc, char *argv[]) {
-	long size;
+    long size;
 
-	if (argc < 2) {
-		size = SIZE;
-	} else {
-		size = atol(argv[1]);
-	}
+    if (argc < 2) {
+        size = SIZE;
+    } else {
+        size = atol(argv[1]);
+    }
     struct block start_block;
     start_block.size = size;
     start_block.data = (int *)calloc(size, sizeof(int));
@@ -143,18 +135,12 @@ int main(int argc, char *argv[]) {
 
     produce_random_data(start_block);
 
-    if (start_block.size < 1001)
-        print_data(start_block);
-
     struct tms start_times, finish_times;
     times(&start_times);
     printf("start time in clock ticks: %ld\n", start_times.tms_utime);
     quick_sort(start_block);
     times(&finish_times);
     printf("finish time in clock ticks: %ld\n", finish_times.tms_utime);
-
-    if (start_block.size < 1001)
-        print_data(start_block);
 
     printf(is_sorted(start_block) ? "sorted\n" : "not sorted\n");
 
