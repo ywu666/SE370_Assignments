@@ -3,13 +3,12 @@
     written by Robert Sheehan
 
     Modified by: Yujia Wu
-    UPI: ywu660
+    UPI: 
 
     By submitting a program you are claiming that you and only you have made
     adjustments and additions to this code.
  */
 
-#include <pthread.h>
 #include <stdio.h> 
 #include <stdlib.h> 
 #include <unistd.h>
@@ -17,16 +16,23 @@
 #include <sys/resource.h>
 #include <stdbool.h>
 #include <sys/times.h>
+#include <pthread.h>
 
 #define SIZE    10
+
+bool busy=true;
+bool finishThread=false;
+bool dataForThread = true;
+struct block dataBelowPivot;
+
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER; 
+pthread_cond_t cond = PTHREAD_COND_INITIALIZER; 
+
 
 struct block {
     int size;
     int *data;
 };
-
-pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void print_data(struct block my_data) {
     for (int i = 0; i < my_data.size; ++i)
@@ -35,43 +41,80 @@ void print_data(struct block my_data) {
 }
 
 /* Split the shared array around the pivot, return pivot index. */
-int split_on_pivot(struct block *my_data) {
-    int right = my_data->size - 1;
+int split_on_pivot(struct block my_data) {
+    int right = my_data.size - 1;
     int left = 0;
-    int pivot = my_data->data[right];
+    int pivot = my_data.data[right];
     while (left < right) {
-        int value = my_data->data[right - 1];
+        int value = my_data.data[right - 1];
         if (value > pivot) {
-            my_data->data[right--] = value;
+            my_data.data[right--] = value;
         } else {
-            my_data->data[right - 1] = my_data->data[left];
-            my_data->data[left++] = value;
+            my_data.data[right - 1] = my_data.data[left];
+            my_data.data[left++] = value;
         }
     }
-    my_data->data[right] = pivot;
+    my_data.data[right] = pivot;
     return right;
 }
 
 /* Quick sort the data. */
-void *quick_sort(void *my_data) {
+void quick_sort(struct block my_data);
+void *quick_sort_by_thread(void *my_data) {
+    //dataBelowPivot = (struct block*) my_data;
+    printf("%s\n","dataBelowPivot" );
+    print_data(dataBelowPivot);
 
-    struct block *cast = (struct block *)my_data;
-    if (cast->size >= 2) {
-  
-    int pivot_pos = split_on_pivot(cast);
+    while(finishThread==false){
+        if(dataForThread==true){
+            busy=true;  
+            dataForThread=false;         
+            quick_sort(dataBelowPivot);
+            busy=false;
+        }else{
+            pthread_mutex_lock(&lock);
+            pthread_cond_wait(&cond,&lock);
+            pthread_mutex_unlock(&lock);
+        }
+    }
+    return NULL;
+}
+
+/* Quick sort the data. */
+void quick_sort( struct block my_data) {
+    if (my_data.size < 2)
+        return;
+    int pivot_pos = split_on_pivot(my_data);
 
     struct block left_side, right_side;
 
     left_side.size = pivot_pos;
-    left_side.data = cast->data;
-    right_side.size = cast->size - pivot_pos - 1;
-    right_side.data = cast->data + pivot_pos + 1;
+    left_side.data = my_data.data;
+    right_side.size = my_data.size - pivot_pos - 1;
+    right_side.data = my_data.data + pivot_pos + 1;
 
-    quick_sort(&left_side);
-    quick_sort(&right_side);
+    //quick_sort(right_side);
+
+    if(busy==false){
+        // there is data avaible for the second thread, always send the signal until it is received.
+        dataForThread = true;
+        dataBelowPivot.size = left_side.size;
+        dataBelowPivot.data = left_side.data;
+        printf("%s\n", "dataBelowPivot");
+        print_data(dataBelowPivot);
+        while(dataForThread == true){
+            pthread_mutex_lock(&lock);
+            pthread_cond_signal(&cond);
+            pthread_mutex_unlock(&lock);
+        }
+    }else{
+        quick_sort(left_side);
+        quick_sort(right_side);
     }
-    return NULL;
+
 }
+
+
 
 /* Check to see if the data is sorted. */
 bool is_sorted(struct block my_data) {
@@ -109,60 +152,43 @@ int main(int argc, char *argv[]) {
 
     produce_random_data(start_block);
 
-    //if (start_block.size < 1001)
-        //print_data(start_block);
+    if (start_block.size < 1001)
+        print_data(start_block);
 
+    
     struct tms start_times, finish_times;
+
     times(&start_times);
     printf("start time in clock ticks: %ld\n", start_times.tms_utime);
 
-   
 
-    //Split the data by using the pivot point 
-    int pivot_pos = split_on_pivot(&start_block);
+    int pivot_pos = split_on_pivot(start_block);
+
+    printf("pivot_pos: %d\n",pivot_pos);
+
     struct block left_side, right_side;
+
     left_side.size = pivot_pos;
     left_side.data = start_block.data;
     right_side.size = start_block.size - pivot_pos - 1;
     right_side.data = start_block.data + pivot_pos + 1;
 
-    //Still use the main thread to quick sort the right_side on it
-    pthread_mutex_lock(&mutex);
-    
-    quick_sort(&right_side);
+    quick_sort(right_side);
+    printf(is_sorted(right_side) ? "Right side is sorted\n" : "Right side is not sorted\n");
 
-    pthread_cond_signal(&cond);
-    pthread_mutex_unlock(&mutex);
-    
-    //Declare a thread
-    pthread_t thread2;
+    pthread_t newThread;
 
-    //Create a second thread to quick sort the left_block on it
-    if (pthread_create(&thread2, NULL, quick_sort, &left_side) != 0) {
-        fprintf(stderr, "ERROR: Failed to create second thread\n");
-         exit(EXIT_FAILURE);
-     }
+    pthread_create(&newThread, NULL, quick_sort_by_thread, &left_side);
 
+    finishThread = true;
 
-    pthread_mutex_lock(&mutex);
-    while (!is_sorted(right_side))
-        pthread_cond_wait(&cond, &mutex);
-
-    //Wait for the second thread to finish
-    if (pthread_join(thread2, NULL) != 0) {
-        fprintf(stderr, "ERROR: Failed to join thread\n");
-        exit(EXIT_FAILURE);
-    }
-
-    pthread_mutex_unlock(&mutex);
-
+    pthread_join(newThread, NULL);
 
     times(&finish_times);
     printf("finish time in clock ticks: %ld\n", finish_times.tms_utime);
-
-    // Print the result after finished the sorting
-    //if (start_block.size < 1001)
-        //print_data(start_block);
+    printf(is_sorted(left_side) ? "Left side is sorted\n" : "Left side is not sorted\n");
+    if (start_block.size < 1001)
+        print_data(start_block);
 
     printf(is_sorted(start_block) ? "sorted\n" : "not sorted\n");
     free(start_block.data);
