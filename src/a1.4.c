@@ -142,6 +142,6 @@ int main(int argc, char *argv[]) {
 
         if(write(my_pipe[1], right_side.data, right_side.size * sizeof(int))){}
         
-        //exit(EXIT_SUCCESS);
+        exit(EXIT_SUCCESS);
     }
 }
