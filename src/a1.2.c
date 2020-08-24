@@ -24,7 +24,7 @@ struct block {
     int *data;
 };
 
-static size_t numOfThreads = 0;
+int numOfThreads = 0;
 
 void print_data(struct block my_data) {
     for (int i = 0; i < my_data.size; ++i)
@@ -32,59 +32,56 @@ void print_data(struct block my_data) {
     printf("\n");
 }
 
-/* Split the shared array around the pivot, return pivot index. */
-int split_on_pivot(struct block my_data) {
-    int right = my_data.size - 1;
+int split_on_pivot(struct block *my_data) {
+    int right = my_data->size - 1;
     int left = 0;
-    int pivot = my_data.data[right];
+    int pivot = my_data->data[right];
     while (left < right) {
-        int value = my_data.data[right - 1];
+        int value = my_data->data[right - 1];
         if (value > pivot) {
-            my_data.data[right--] = value;
+            my_data->data[right--] = value;
         } else {
-            my_data.data[right - 1] = my_data.data[left];
-            my_data.data[left++] = value;
+            my_data->data[right - 1] = my_data->data[left];
+            my_data->data[left++] = value;
         }
     }
-    my_data.data[right] = pivot;
+    my_data->data[right] = pivot;
     return right;
 }
 
-
-void quick_sort(struct block my_data);
-void *quick_sort_thread(void *my_data) {
-    struct block *cast = (struct block*) my_data;
-    quick_sort(*cast);
-    return NULL;
-}
-
 /* Quick sort the data. */
-void quick_sort(struct block my_data) {
+void *quick_sort(void *oneSide) {
 
-    if (my_data.size < 2)
-        return;
+    struct block *my_data = oneSide;
+    if (my_data->size < 2)
+        return NULL;
+
+    
     int pivot_pos = split_on_pivot(my_data);
 
     struct block left_side, right_side;
 
     left_side.size = pivot_pos;
-    left_side.data = my_data.data;
-    right_side.size = my_data.size - pivot_pos - 1;
-    right_side.data = my_data.data + pivot_pos + 1;
+    left_side.data = my_data->data;
+    right_side.size = my_data->size - pivot_pos - 1;
+    right_side.data = my_data->data + pivot_pos + 1;
 
-    quick_sort(left_side);
+    pthread_t newThread1;
 
-    pthread_t thread_right;
+    numOfThreads++;
 
-    if (pthread_create(&thread_right, NULL, quick_sort_thread, (void *)&right_side) != 0) {
-        // no space for another thread, call quick_sort in the existing thread 
-        quick_sort(right_side);
-    } else {
-        numOfThreads++;
+    // if the return of pthread_create is not 0, that means there is no more threads availa
+    if(pthread_create(&newThread1, NULL, quick_sort, &right_side) == 0){
+        quick_sort(&left_side);
+        pthread_join(newThread1, NULL);
+    }else{  
+        numOfThreads--;
+        quick_sort(&left_side);
+        quick_sort(&right_side);
     }
-    //Wait for the right thread to finish 
-    pthread_join(thread_right, NULL);
+    return NULL;
 }
+
 
 
 /* Check to see if the data is sorted. */
@@ -130,7 +127,7 @@ int main(int argc, char *argv[]) {
     struct tms start_times, finish_times;
     times(&start_times);
     printf("start time in clock ticks: %ld\n", start_times.tms_utime);
-    quick_sort(start_block);
+    quick_sort(&start_block);
     times(&finish_times);
     printf("finish time in clock ticks: %ld\n", finish_times.tms_utime);
 
@@ -138,7 +135,7 @@ int main(int argc, char *argv[]) {
         print_data(start_block);
 
     printf(is_sorted(start_block) ? "sorted\n" : "not sorted\n");
-    printf("Number of threads created: %zu\n", numOfThreads);
+    printf("Number of threads created: %d\n", numOfThreads);
 
     free(start_block.data);
     exit(EXIT_SUCCESS);
