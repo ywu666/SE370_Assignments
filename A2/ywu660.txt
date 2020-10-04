@@ -1,3 +1,17 @@
+Q1: 
+Terminal 2 result:
+yoga@yoga-VirtualBox:~/Documents/A2$ ls -l source
+total 12
+-rw-rw-r-- 1 yoga yoga 2 10月  3 14:34 one
+-rw-rw-r-- 1 yoga yoga 2 10月  3 14:34 three
+-rw-rw-r-- 1 yoga yoga 2 10月  3 14:34 two
+yoga@yoga-VirtualBox:~/Documents/A2$ ls -l mount
+total 0
+-rw-rw-r-- 1 yoga yoga 2 10月  3 14:34 one
+-rw-rw-r-- 1 yoga yoga 2 10月  3 14:34 three
+-rw-rw-r-- 1 yoga yoga 2 10月  3 14:34 two
+
+Q2:
 cd mount:
 DEBUG:fuse.log-mixin:-> opendir / ()
 DEBUG:fuse.log-mixin:<- opendir 0
@@ -32,6 +46,15 @@ fusermount-u mount:
 DEBUG:fuse.log-mixin:-> destroy / ()
 DEBUG:fuse.log-mixin:<- destroy None
 
+Terminal 2 result:
+yoga@yoga-VirtualBox:~/Downloads/A2$ ls -l mount
+total 0
+yoga@yoga-VirtualBox:~/Downloads/A2$ ls -l source
+total 16
+-rw-rw-r-- 1 yoga yoga 12 10月  4 15:42 newfile
+-rw-rw-r-- 1 yoga yoga  2 10月  3 14:34 one
+-rw-rw-r-- 1 yoga yoga  2 10月  3 14:34 three
+-rw-rw-r-- 1 yoga yoga  2 10月  3 14:34 two
 
 
 
