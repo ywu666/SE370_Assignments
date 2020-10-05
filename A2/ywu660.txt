@@ -4,9 +4,9 @@ Part 1 Q1:
 Terminal 2 result:
 yoga@yoga-VirtualBox:~/Documents/A2$ ls -l source
 total 12
--rw-rw-r-- 1 yoga yoga Oct 2   3 14:34 one
--rw-rw-r-- 1 yoga yoga Oct 2   3 14:34 three
--rw-rw-r-- 1 yoga yoga OCt 2   3 14:34 two
+-rw-rw-r-- 1 yoga yoga Oct 2  3 14:34 one
+-rw-rw-r-- 1 yoga yoga Oct 2  3 14:34 three
+-rw-rw-r-- 1 yoga yoga OCt 2  3 14:34 two
 yoga@yoga-VirtualBox:~/Documents/A2$ ls -l mount
 total 0
 -rw-rw-r-- 1 yoga yoga Oct 2  3 14:34 one
