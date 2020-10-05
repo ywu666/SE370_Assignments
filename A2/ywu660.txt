@@ -13,20 +13,18 @@ total 0
 
 Q2:
 cd mount:
-DEBUG:fuse.log-mixin:-> opendir / ()
-DEBUG:fuse.log-mixin:<- opendir 0
 DEBUG:fuse.log-mixin:-> getattr / (None,)
-DEBUG:fuse.log-mixin:<- getattr {'st_atime': 1601795862.097616, 'st_ctime': 1601795850.5256155, 'st_gid': 1000, 'st_mode': 16893, 'st_mtime': 1601706871.0, 'st_nlink': 2, 'st_size': 4096, 'st_uid': 1000}
-DEBUG:fuse.log-mixin:-> readdir / (0,)
-DEBUG:fuse.log-mixin:<- readdir <generator object Passthrough.readdir at 0x7fa24433bf20>
-DEBUG:fuse.log-mixin:-> releasedir / (0,)
-DEBUG:fuse.log-mixin:<- releasedir 0
+DEBUG:fuse.log-mixin:<- getattr {'st_atime': 1601798113.5335066, 'st_ctime': 1601798113.4055028, 'st_gid': 1000, 'st_mode': 16893, 'st_mtime': 1601706871.0, 'st_nlink': 2, 'st_size': 4096, 'st_uid': 1000}
+DEBUG:fuse.log-mixin:-> access / (1,)
+DEBUG:fuse.log-mixin:<- access None
 
 cat > newfile
 DEBUG:fuse.log-mixin:-> create /newfile (33204,)
 DEBUG:fuse.log-mixin:<- create 4
 DEBUG:fuse.log-mixin:-> getattr /newfile (4,)
 DEBUG:fuse.log-mixin:<- getattr {'st_atime': 1601797277.440076, 'st_ctime': 1601797277.440076, 'st_gid': 1000, 'st_mode': 33204, 'st_mtime': 1601797277.440076, 'st_nlink': 1, 'st_size': 0, 'st_uid': 1000}
+DEBUG:fuse.log-mixin:-> flush /newfile (4,)
+DEBUG:fuse.log-mixin:<- flush None
 
 hello world:
 DEBUG:fuse.log-mixin:-> write /newfile (b'hello world\n', 0, 4)
@@ -55,6 +53,3 @@ total 16
 -rw-rw-r-- 1 yoga yoga  2 10月  3 14:34 one
 -rw-rw-r-- 1 yoga yoga  2 10月  3 14:34 three
 -rw-rw-r-- 1 yoga yoga  2 10月  3 14:34 two
-
-
-
