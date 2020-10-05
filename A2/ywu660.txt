@@ -52,7 +52,7 @@ Explain:
 getattr /newfile (None,) - Get the file attributes of the newfile. Failed to get the newfile, then an FileNotFoundError is raised.
 create /newfile (33204,) -  Open the file newfile and return the file descriptor of newfile. If the file cannot be opened, an OSError is raised.
 getattr /newfile (4,) - Get the attribute of the newfile again. The output is a file.
-flush /newfile (4,) - Force write of newfile with filedescriptor 4 to disk. Return None which means ok.
+flush /newfile (4,) - Force write of newfile to disk. Return None which means ok.
 
 hello world:
 Terminal 1 Result:
@@ -60,8 +60,7 @@ DEBUG:fuse.log-mixin:-> write /newfile (b'hello world\n', 0, 4)
 DEBUG:fuse.log-mixin:<- write 12
 
 Explain:
-write /newfile - Writes the string "hello world" to file descriptor 4 which is the newfile. 
-Return the number of bytes actually written.
+write /newfile - Writes the string "hello world" to an open file which is a newfile. Return the number of bytes actually written.
 
 ^D:
 Terminal 1 Result:
@@ -71,15 +70,16 @@ DEBUG:fuse.log-mixin:-> release /newfile (4,)
 DEBUG:fuse.log-mixin:<- release None
 
 Explain:
-flush /newfile (4,) - Force write of newfile (contains "hello world") with filedescriptor 4 to disk. Return None which means ok.
-release /newfile (4,) - Close the given file descriptor 4, so that it no longer refers to any file or other resource and may be reused. Return None which means ok.
+flush /newfile (4,) - Force write of newfile (contains "hello world") to disk. Return None which means ok.
+release /newfile (4,) - Close the newfile, so that it no longer refers to any file or other resource and may be reused. Return None which means ok.
 
 cd ../:
 Terminal 1 Result:
 DEBUG:fuse.log-mixin:-> getattr / (None,)
 DEBUG:fuse.log-mixin:<- getattr {'st_atime': 1601795862.097616, 'st_ctime': 1601797277.440076, 'st_gid': 1000, 'st_mode': 16893, 'st_mtime': 1601797277.440076, 'st_nlink': 2, 'st_size': 4096, 'st_uid': 1000}
 
-Explain:
+Explain: 
+getattr / (None,) - Get the attributes of the parent directory. Then the output is a dictionary.
 
 fusermount -u mount:
 Terminal 1 Result:
