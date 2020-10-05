@@ -13,8 +13,12 @@ total 0
 -rw-rw-r-- 1 yoga yoga Oct 2  3 14:34 three
 -rw-rw-r-- 1 yoga yoga Oct 2  3 14:34 two
 
-The above shows the result of terminal 2. The files in the source folder is mounted to the mount point which is the mount folder. The total number here indicated  the number of file system blocks used by the directory. However, the only difference here is the total number of the source folder is 12, the total number of the mount folder is 0. This means the file generated inside the mount directory is in memory rather than the disk.
-The first part shows the permissions of the users, group and others for that file. Then the second part is one, which indicate there is one hard link point to this file which is file itself. Then the thid part "yoga" indicate the owner and the group of the file. Then the fourth part is the modification time as well as the number of bytes in the file. Then the last part is the name of the file.
+The above shows the result of terminal 2. The files in the source folder is mounted to the mount point which is the mount folder. The total number here indicated  the number of file system blocks used by the directory. 
+However, the only difference here is the total number of the source folder is 12, the total number of the mount folder is 0. This means the file generated inside the mount directory is in memory rather than the disk.
+The first part shows the permissions of the users, group and others for that file. 
+Then the second part is one, which indicate there is one hard link point to this file which is file itself. 
+Then the thid part "yoga" indicate the owner and the group of the file. Then the fourth part is the modification time as well as the number of bytes in the file.
+Then the last part is the name of the file.
 
 Part 1 Q2:
 Terminal 1 Results:
@@ -77,28 +81,37 @@ total 16
 
 Part 2 Q3:
 __init__ : 
-Creates an empty dictionary self.files for the files. This will use the path names as the keys. Each value in the dictionary will be another dictionary. self.data is a dictionary for the files’ data. The path names are the keys. The values are the data of that file. Sets the starting value for the file descriptors, these are going to be used as unique file identifiers.
+Creates an empty dictionary self.files for the files. This will use the path names as the keys. 
+Each value in the dictionary will be another dictionary. self.data is a dictionary for the files’ data. The path names are the keys. 
+The values are the data of that file. Sets the starting value for the file descriptors, these are going to be used as unique file identifiers.
 Grabs the current time and sets the file attributes for the root of this file system. It is a directory, with creation, modified and accessed times set to now. It has two links.
 
 getattr: 
-Provide the path name as the key, if the path name exist, then find the corresponding file in the self.files dictionary and return all the attributes. Otherwise, throw an fuseOS error that indicates “No such file or directory” to users.
+Provide the path name as the key, if the path name exist, then find the corresponding file in the self.files dictionary and return all the attributes.
+Otherwise, throw an fuseOS error that indicates “No such file or directory” to users.
 
 readdir: 
-For each file in the list of files in the current object, let's just consider those that are not called '/'. Then for the files that satisfy this condition, remove the first character in the file's name. Then put the result in a new list, and join [".",".."] with the new list.The list [".", ".."] contains with the current working directory and the parent directory, respecticely.
+For each file in the list of files in the current object, let's just consider those that are not called '/'. 
+Then for the files that satisfy this condition, remove the first character in the file's name. 
+Then put the result in a new list, and join [".",".."] with the new list.
+The list [".", ".."] contains with the current working directory and the parent directory, respecticely.
 
 open: 
 Open a new file and increase the file descriptor by 1 and then return the new file descriptor.
 
 create: 
-Create a new file in self.files dictionary by using the path name that provided by the user. Then set the file attributes of the new file. It is a regular file, with creation, modified and accessed times set to time() and method time() returns the time as a floating point number expressed in seconds since the epoch, in UTC. And the new file will have one link.
+Create a new file in self.files dictionary by using the path name that provided by the user.
+Then set the file attributes of the new file. It is a regular file, with creation, modified and accessed times set to time() and method time() returns the time as a floating point number expressed in seconds since the epoch, in UTC. And the new file will have one link.
 
 unlink:
 This method will remove the file with the path name that provided by the user from the self.files dictionary. 
 
 write: 
-Using the path name as a key to find the data of corresponding file in the self.data dictionary. Then based on the provided offset (write pointer in the file)  and write the new data into the file.
+Using the path name as a key to find the data of corresponding file in the self.data dictionary. 
+Then based on the provided offset (write pointer in the file)  and write the new data into the file.
 Then renew that corresponding file’s attribute – size of the file  by using the path name in the self.files dictionary. 
 At last, Return the length of the new data.
 
 read: 
-Finding the file that need to read in the self.data dictionary by using the path name as the key, then using the offset and the size to define how many data the user want to read from the file.
+Finding the file that need to read in the self.data dictionary by using the path name as the key. 
+Then using the offset and the size to define how many data the user want to read from the file.
