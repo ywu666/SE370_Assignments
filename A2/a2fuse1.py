@@ -17,14 +17,10 @@ from fuse import FUSE, LoggingMixIn, Operations
 from memory import Memory
 
 
-class A2Fuse2(LoggingMixIn, Operations):
-
-    
-
+class A2Fuse2(Memory): 
     def __init__(self, root1, root2):
         self.root1 = root1
         self.root2 = root2
-        #self.memory = Memory()
         self.files = {}
         self.data = defaultdict(bytes)
         self.fd = 0
@@ -35,18 +31,15 @@ class A2Fuse2(LoggingMixIn, Operations):
     # Helpers
     # =======
     def _full_path(self, partial):
-        print("partials = " + partial)
         if partial.startswith("/"):
             partial = partial[1:]
-        
-        path=[]
+        paths = []
         path1 = os.path.join(self.root1, partial)
         path2 = os.path.join(self.root2, partial)
+        paths.append(path1)
+        paths.append(path2)
         
-        path.append(path1)
-        path.append(path2)
-        
-        return path
+        return paths
         
     def create(self, path, mode, fi=None):
         self.files[path] = dict(st_mode=(S_IFREG | mode), st_nlink=1, st_uid=os.getuid(), st_gid=os.getuid(),
@@ -57,15 +50,11 @@ class A2Fuse2(LoggingMixIn, Operations):
         return self.fd
 
     def getattr(self, path, fh=None):
-    
-        print(self.files)
         if path not in self.files:
-            
-            full_path = self._full_path(path)
-            
-            for x in full_path:
-                if os.path.exists(x):
-                    st = os.lstat(x)
+            full_paths = self._full_path(path)
+            for full_path in full_paths:
+                if os.path.isfile(full_path):
+                    st = os.lstat(full_path)
                     return dict((key, getattr(st, key)) for key in ('st_atime', 'st_ctime',
                          'st_gid', 'st_mode', 'st_mtime', 'st_nlink', 'st_size', 'st_uid'))
         
@@ -79,9 +68,9 @@ class A2Fuse2(LoggingMixIn, Operations):
    
     def open(self, path, flags):
         if path not in self.files:
-            full_path = self._full_path(path)
-            for x in full_path:
-                return os.open(x, flags)
+            full_paths = self._full_path(path)
+            for full_path in full_paths:
+                return os.open(full_path, flags)
         else:
             self.fd += 1
             return self.fd
@@ -99,15 +88,10 @@ class A2Fuse2(LoggingMixIn, Operations):
         for y in full_path:
             if os.path.isdir(y):
                 dirents.extend(os.listdir(y))
-        # print([y[1:] for y in dirents])
         dirents.extend([x[1:] for x in self.files if x != '/'])
         for r in dirents:
             yield r
-   
-  
-
-
-
+ 
     def unlink(self, path):
         if path not in self.files:
             return os.unlink(self._full_path(path))
@@ -133,18 +117,6 @@ class A2Fuse2(LoggingMixIn, Operations):
             return os.fsync(fh)
         else:
             return 0;
-
-    def release(self, path, fh):
-        if path not in self.files:
-            return os.close(fh)
-        else:
-            return 0
-
-    def fsync(self, path, fdatasync, fh):
-        if path not in self.files:
-            return self.flush(path, fh)
-        else:
-            return 0
 
 # override
 def main(mountpoint, root1, root2):
