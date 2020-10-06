@@ -8,82 +8,101 @@ import logging
 import os
 import sys
 
-from fuse import FUSE, LoggingMixIn
-from passthrough import Passthrough
+from collections import defaultdict
+from time import time
+from stat import S_IFDIR, S_IFLNK, S_IFREG
+from fuse import FUSE, LoggingMixIn, Operations
 from memory import Memory
 
 
-class A2Fuse2(LoggingMixIn, Passthrough):
+class A2Fuse2(LoggingMixIn, Operations):
 
     def __init__(self, root1, root2):
         self.root1 = root1
         self.root2 = root2
         self.memory = Memory()
+        # self.files = {}
+        # self.data = defaultdict(bytes)
+        # self.fd = 0
+        # now = time()
+        # self.files['/'] = dict(st_mode=(S_IFDIR | 0o755), st_ctime=now,
+        #                        st_mtime=now, st_atime=now, st_nlink=2)
 
     # Helpers
     # =======
-    def _full_path(self, partials):
+    def _full_path(self, partial):
         paths = []
-        for partial in partials:
-            if partial.startswith("/"):
-                partial = partial[1:]
-            path = os.path.join(self.root, partial)
-            paths.append(path)
+        if partial.startswith("/"):
+            partial = partial[1:]
+        path1 = os.path.join(self.root1, partial)
+        path2 = os.path.join(self.root2, partial)
+
+        paths.append(path1)
+        paths.append(path2)
+
         return paths
 
-    def getattr(self, path, fh=None):
-        if path in self.memory.files:
-            Passthrough.getattr(self, path, fh)
-        else:
-            self.memory.getattr(self, path, fh)
+    def create(self, path, mode, fi=None):
+        # create in memory
+        self.memory.create(path, mode)
 
-    def readdir(self, path, fh):
-        full_paths = self._full_path(self, path)
-        dirents = ['.', '..']
-        for full_path in full_paths:
-            if full_path == "/":
-                if os.path.isdir(full_path):
-                    dirents.extend(os.listdir(full_path))
-                dirents.extend([x[1:] for x in self.files if x != '/'])
-            elif full_path not in self.memory.files:
-                if os.path.isdir(full_path):
-                    dirents.extend(os.listdir(full_path))
-            else:
-                dirents.extend([x[1:] for x in self.files if x != '/'])
-            for r in dirents:
-                yield r
+    def getattr(self, path, fh=None):
+        if path not in self.memory.files:
+            full_paths = self._full_path(path)
+            for full_path in full_paths:
+                if os.path.isfile(full_path):
+                    st = os.lstat(full_path)
+                    return dict((key, getattr(st, key)) for key in ('st_atime', 'st_ctime',
+                                                                    'st_gid', 'st_mode', 'st_mtime', 'st_nlink',
+                                                                    'st_size', 'st_uid'))
+        else:
+            return self.memory.getattr(path, fh)
 
     def open(self, path, flags):
         if path not in self.memory.files:
-            Passthrough.open(self, path, flags)
+            full_paths = self._full_path(path)
+            for full_path in full_paths:
+                return os.open(full_path, flags)
         else:
-            self.memory.open(self, path, flags)
-
-    def create(self, path, mode):
-        # create in memory
-        return self.memory.create(self, path, mode)
-
-    def unlink(self, path):
-        if path not in self.memory.files:
-            Passthrough.unlink(self, path)
-        else:
-            self.memory.unlink(self, path)
-
-    def write(self, path, buf, offset, fh):
-        if path not in self.memory.files:
-            Passthrough.write(self, path, buf, offset, fh)
-        else:
-            self.memory.write(self, path, buf, offset, fh)
+            self.memory.open(path, flags)
 
     def read(self, path, length, offset, fh):
         if path not in self.memory.files:
-            Passthrough.read(self, path, length, offset, fh)
+            os.lseek(fh, offset, os.SEEK_SET)
+            return os.read(fh, length)
         else:
-            self.memory.read(self, path, length, offset, fh)
+            return self.memory.read(path, length, offset, fh)
 
-    def flush(self, path, fh):
+    def readdir(self, path, fh):
+        full_paths = self._full_path(path)
+        dirents = ['.', '..']
+        for full_path in full_paths:
+            if os.path.isfile(full_path):
+                dirents.extend(os.listdir(full_path))
+        dirents.extend([x[1:] for x in self.files if x != '/'])
+        for r in dirents:
+            yield r
+
+    def unlink(self, path):
         if path not in self.memory.files:
-            return Passthrough.flush(self, path, fh)
+            full_paths = self._full_path(path)
+            for full_path in full_paths:
+                return os.unlink(full_path)
+        else:
+            self.memory.unlink(path)
+
+    def write(self, path, buf, offset, fh):
+        if path not in self.memory.files:
+            os.lseek(fh, offset, os.SEEK_SET)
+            return os.write(fh, buf)
+        else:
+            self.memory.write(path, buf, offset, fh)
+
+    # File methods
+    # ============
+    def flush(self, path, fh):
+        if path not in self.files:
+            return os.fsync(fh)
 
 
 # override
@@ -92,5 +111,5 @@ def main(mountpoint, root1, root2):
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
+    # logging.basicConfig(level=logging.DEBUG)
     main(sys.argv[3], sys.argv[2], sys.argv[1])
