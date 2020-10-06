@@ -115,7 +115,6 @@ class A2Fuse2(LoggingMixIn, Operations):
     #     return attrs.keys()
 
     def open(self, path, flags):
-
         if path not in self.files:
             full_paths = self._full_path(path)
             for full_path in full_paths:
@@ -133,22 +132,12 @@ class A2Fuse2(LoggingMixIn, Operations):
             return self.data[path][offset:offset + length]
 
     def readdir(self, path, fh):
+        full_paths = self._full_path(path)
         dirents = ['.', '..']
-
-        if path not in self.files:
-            full_paths = self._full_path(path)
-            for full_path in full_paths:
-                if os.path.isdir(full_path):
-                    dirents.extend(os.listdir(full_path))
-
-        elif path == "/":
-            full_paths = self._full_path(path)
-            for full_path in full_paths:
-                if os.path.isdir(full_path):
-                    dirents.extend(os.listdir(full_path))
-            dirents.extend([x[1:] for x in self.files if x != '/'])
-        else:
-            dirents.extend([x[1:] for x in self.files if x != '/'])
+        for full_path in full_paths:
+            if os.path.exists(full_path):
+                dirents.extend(os.listdir(full_path))
+        dirents.extend([x[1:] for x in self.files if x != '/'])
         for r in dirents:
             yield r
 
@@ -212,10 +201,13 @@ class A2Fuse2(LoggingMixIn, Operations):
 
     def unlink(self, path):
         if path not in self.files:
-            full_path = self._full_path(path)
-            for x in full_path:
-                return os.unlink(x)
+            full_paths = self._full_path(path)
+            for full_path in full_paths:
+                if os.path.exists(full_path):
+                    print("full path exists in unlink: " + full_path)
+                    return os.unlink(full_path)
         else:
+            print("path in memory unlink: " + path)
             self.files.pop(path)
 
     # def symlink(self, name, target):
