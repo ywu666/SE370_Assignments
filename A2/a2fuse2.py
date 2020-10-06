@@ -1,22 +1,27 @@
 # Yujia Wu - UPI: 827481772 / ywu660
 # !/usr/bin/env python
 
-from __future__ import print_function, absolute_import, division
-
+# !/usr/bin/env python
+from __future__ import print_function, absolute_import, division, with_statement
 import os
 import sys
-
+import errno
+import logging
+from sys import argv, exit
+from errno import ENOENT, EMULTIHOP
 from collections import defaultdict
-from errno import ENOENT
+from stat import S_IFDIR, S_IFLNK, S_IFREG
 from time import time
-from stat import S_IFDIR, S_IFREG
-from fuse import FUSE, LoggingMixIn, Operations, FuseOSError
-from memory import Memory
+from fuse import FUSE, FuseOSError, Operations, LoggingMixIn
+
+if not hasattr(__builtins__, 'bytes'):
+    bytes = str
 
 
 class A2Fuse2(LoggingMixIn, Operations):
 
     def __init__(self, root1, root2):
+        print(self)
         self.root1 = root1
         self.root2 = root2
         self.files = {}
@@ -37,7 +42,6 @@ class A2Fuse2(LoggingMixIn, Operations):
         path2 = os.path.join(self.root2, partial)
         paths.append(path1)
         paths.append(path2)
-
         return paths
 
     def create(self, path, mode, fi=None):
@@ -50,6 +54,7 @@ class A2Fuse2(LoggingMixIn, Operations):
 
     def getattr(self, path, fh=None):
         if path not in self.files:
+            print("file in user space:" + path)
             full_paths = self._full_path(path)
             for full_path in full_paths:
                 if os.path.isfile(full_path):
@@ -57,7 +62,10 @@ class A2Fuse2(LoggingMixIn, Operations):
                     return dict((key, getattr(st, key)) for key in ('st_atime', 'st_ctime',
                                                                     'st_gid', 'st_mode', 'st_mtime', 'st_nlink',
                                                                     'st_size', 'st_uid'))
+                else:
+                    raise FuseOSError(EMULTIHOP)
         else:
+            print("file in memory:" + path)
             if path not in self.files:
                 raise FuseOSError(ENOENT)
             return self.files[path]
