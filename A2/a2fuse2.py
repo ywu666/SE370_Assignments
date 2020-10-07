@@ -38,10 +38,8 @@ class A2Fuse2(LoggingMixIn, Operations):
         path = []
         path1 = os.path.join(self.root1, partial)
         path2 = os.path.join(self.root2, partial)
-
         path.append(path1)
         path.append(path2)
-
         return path
 
     def access(self, path, mode):
@@ -79,19 +77,17 @@ class A2Fuse2(LoggingMixIn, Operations):
     #         self.files[path]['st_gid'] = gid
 
     def getattr(self, path, fh=None):
-
         if path not in self.files:
             full_paths = self._full_path(path)
-            i = 0
+            count = 0
             for full_path in full_paths:
-                i = i + 1
                 if os.path.exists(full_path):
                     st = os.lstat(full_path)
-                    return dict((key, getattr(st, key)) for key in ('st_atime', 'st_ctime',
-                                                                    'st_gid', 'st_mode', 'st_mtime', 'st_nlink',
-                                                                    'st_size', 'st_uid'))
-                if i == 2:
-                    raise FuseOSError(ENOENT)
+                    return dict((key, getattr(st, key)) for key in ('st_atime', 'st_ctime', 'st_gid', 'st_mode', 'st_mtime', 'st_nlink','st_size', 'st_uid'))
+                else:
+                    count +=1                                          
+            if count == 2:
+                raise FuseOSError(ENOENT)
 
         else:
             if path not in self.files:
@@ -204,10 +200,8 @@ class A2Fuse2(LoggingMixIn, Operations):
             full_paths = self._full_path(path)
             for full_path in full_paths:
                 if os.path.exists(full_path):
-                    print("full path exists in unlink: " + full_path)
                     return os.unlink(full_path)
         else:
-            print("path in memory unlink: " + path)
             self.files.pop(path)
 
     # def symlink(self, name, target):
