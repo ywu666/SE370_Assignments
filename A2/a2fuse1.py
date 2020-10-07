@@ -79,26 +79,23 @@ class A2Fuse2(LoggingMixIn, Operations):
     #     else:
     #         self.files[path]['st_uid'] = uid
     #         self.files[path]['st_gid'] = gid
-
-    def getattr(self, path, fh=None):
-        if path not in self.files:
+      def getattr(self, path, fh=None):
+        if path not in self.files:  # in user space
             full_paths = self._full_path(path)
-
-            i = 0
+            count = 0  # find the new file
             for full_path in full_paths:
-                i = i + 1
-                if os.path.exists(full_path):
+                if os.path.exists(full_path):  # Check if the file exists
                     st = os.lstat(full_path)
                     return dict((key, getattr(st, key)) for key in ('st_atime', 'st_ctime',
                                                                     'st_gid', 'st_mode', 'st_mtime', 'st_nlink',
                                                                     'st_size', 'st_uid'))
-                if i == 2:
-                    raise FuseOSError(ENOENT)
-
-        else:
+                else:
+                    count += 1
+            if count == 2:  # This means this is a new file
+                raise FuseOSError(ENOENT)  # Raise the file not found error
+        else:  # in memory
             if path not in self.files:
                 raise FuseOSError(ENOENT)
-
             return self.files[path]
 
     # def getxattr(self, path, name, position=0):
