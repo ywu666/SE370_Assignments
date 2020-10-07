@@ -53,8 +53,9 @@ class A2Fuse2(LoggingMixIn, Operations):
             for full_path in full_paths:
                 if os.path.exists(full_path):
                     st = os.lstat(full_path)
-                    return dict((key, getattr(st, key)) for key in ('st_atime', 'st_ctime', 'st_gid', 'st_mode', 'st_mtime',
-                                                                    'st_nlink', 'st_size', 'st_uid'))
+                    return dict(
+                        (key, getattr(st, key)) for key in ('st_atime', 'st_ctime', 'st_gid', 'st_mode', 'st_mtime',
+                                                            'st_nlink', 'st_size', 'st_uid'))
                 else:
                     count += 1
             if count == 2:  # a complete new file
@@ -116,9 +117,27 @@ class A2Fuse2(LoggingMixIn, Operations):
         else:
             self.files.pop(path)
 
+    def truncate(self, path, length, fh=None):
+        if path not in self.files:
+            full_paths = self._full_path(path)
+            for full_path in full_paths:
+                with open(full_path, 'r+') as f:
+                    f.truncate(length)
+        else:
+            self.data[path] = self.data[path][:length]
+            self.files[path]['st_size'] = length
+
     def flush(self, path, fh):
         if path not in self.files:
             return os.fsync(fh)
+
+    def release(self, path, fh):
+        if path not in self.files:
+            return os.close(fh)
+
+    def fsync(self, path, fdatasync, fh):
+        if path not in self.files:
+            return self.flush(path, fh)
 
 
 def main(mountpoint, root1, root2):
